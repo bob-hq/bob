@@ -1,2 +1,4 @@
 def main() -> None:
-    print("Hello from bob!")
+    from bob.cli import cli
+
+    cli()
