@@ -20,6 +20,7 @@ class Rule:
         name = f"bob-{rule_index}"
         if description is not None:
             name = "".join(c for c in description.lower() if c.isalnum()) + "-" + name
+            description += " $out"
 
         self.name = name
 
@@ -34,6 +35,7 @@ class Rule:
             restat=restat,
             deps=deps,
         )
+        context.writer.newline()
 
     def build(
         self,

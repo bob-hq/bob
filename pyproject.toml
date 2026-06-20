@@ -7,10 +7,7 @@ authors = [{ name = "Noam Zaks", email = "noam@noamzaks.com" }]
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE.md"]
-dependencies = [
-    "ninja>=1.13.0",
-    "rich-click>=1.9.8",
-]
+dependencies = ["ninja>=1.13.0", "rich-click>=1.9.8"]
 
 [project.scripts]
 bob = "bob:main"
@@ -20,7 +17,10 @@ requires = ["uv_build>=0.8.0,<0.12.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["pre-commit>=4.6.0", "ruff>=0.15.18", "ty>=0.0.51"]
+dev = ["pre-commit>=4.6.0", "pytest>=9.1.1", "ruff>=0.15.18", "ty>=0.0.51"]
+
+[tool.ruff.lint]
+ignore = ["F403", "F405"]
 
 # TODO: https://github.com/pallets/click/issues/3502
 [tool.uv]
