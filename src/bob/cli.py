@@ -9,6 +9,9 @@ from bob.constants import DEFAULT_BUILDDIR
 @click.group
 def cli() -> None:
     """The ergonomic Ninja-based build system."""
+    from bob.log import setup
+
+    setup()
 
 
 @cli.command()
@@ -16,7 +19,7 @@ def cli() -> None:
     "--builddir",
     help="The directory to put the Bob outputs in.",
     type=click.Path(file_okay=False, path_type=Path),
-    default=str(DEFAULT_BUILDDIR),
+    default=DEFAULT_BUILDDIR,
     show_default=True,
 )
 @click.option(
@@ -24,15 +27,37 @@ def cli() -> None:
     "bobfile",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="The input Bobfile",
-    default="Bobfile",
+    default=Path("Bobfile"),
     show_default=True,
 )
+@click.option("--clean", "do_clean", is_flag=True, help="Clean before building")
 def build(**kwargs) -> None:
     """Build the given Bob project."""
 
     from bob.commands.build import build
 
     build(**kwargs)
+
+
+@cli.command
+@click.option(
+    "--builddir",
+    help="The directory to put the Bob outputs in.",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=DEFAULT_BUILDDIR,
+    show_default=True,
+)
+@click.option(
+    "--force",
+    help="Remove the build directory even if it doesn't match a Bob build directory.",
+    is_flag=True,
+)
+def clean(**kwargs):
+    """Clean all built files."""
+
+    from bob.commands.clean import clean
+
+    clean(**kwargs)
 
 
 @cli.command
