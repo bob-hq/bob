@@ -12,7 +12,7 @@ CASES_PATH = Path(__file__).parent / "cases"
 @pytest.mark.parametrize(
     "case", [case.stem for case in CASES_PATH.iterdir() if case.suffix == ".bob"]
 )
-def test_configure(tmp_path: Path, case: str) -> None:
+def test_configure(pytestconfig: pytest.Config, tmp_path: Path, case: str) -> None:
     bobfile = CASES_PATH / f"{case}.bob"
     expected_ninja_path = CASES_PATH / f"{case}.ninja"
 
@@ -25,6 +25,9 @@ def test_configure(tmp_path: Path, case: str) -> None:
     assert build_ninja_path.is_file()
 
     actual = build_ninja_path.read_text()
-    expected = expected_ninja_path.read_text()
 
-    assert actual == expected
+    if pytestconfig.getoption("--update"):
+        expected_ninja_path.write_text(actual)
+    else:
+        expected = expected_ninja_path.read_text()
+        assert actual == expected
