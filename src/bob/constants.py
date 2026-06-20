@@ -1,0 +1,8 @@
+from pathlib import Path
+
+DEFAULT_BUILDDIR = Path("build")
+BOB_BUILDDIR_SUBDIRECTORY = Path(".bob")
+
+
+def get_build_ninja_path(builddir: Path) -> Path:
+    return builddir / BOB_BUILDDIR_SUBDIRECTORY / "build.ninja"

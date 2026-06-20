@@ -7,7 +7,10 @@ authors = [{ name = "Noam Zaks", email = "noam@noamzaks.com" }]
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE.md"]
-dependencies = ["rich-click>=1.9.8"]
+dependencies = [
+    "ninja>=1.13.0",
+    "rich-click>=1.9.8",
+]
 
 [project.scripts]
 bob = "bob:main"
