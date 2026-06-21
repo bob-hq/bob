@@ -1,5 +1,5 @@
-from bob.api.rule import Rule
+from bob.api.rule import Rule, RuleInput
 from bob.api.scope import Scope, ScopeList
 from bob.api.variable import Variable
 
-__all__ = ["Rule", "Variable", "Scope", "ScopeList"]
+__all__ = ["Rule", "Variable", "Scope", "ScopeList", "RuleInput"]

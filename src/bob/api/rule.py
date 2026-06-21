@@ -1,4 +1,7 @@
+from dataclasses import dataclass
+from pathlib import Path
 from string import Template
+from typing import Literal, TypeAlias, TypeVar, overload
 
 from ninja.ninja_syntax import escape as ninja_escape
 
@@ -7,7 +10,136 @@ from bob.api.variable import NINJA_PROVIDED_VARIABLES, Variable
 from bob.core.context import Context
 
 
-class Rule:
+@dataclass(frozen=True)
+class FileTarget:
+    path: Path
+
+
+class RuleInput:
+    Type: TypeAlias = str | Path | FileTarget
+
+    def __init__(self):
+        raise Exception("RuleInput is a utility namespace")
+
+    @overload
+    @staticmethod
+    def resolve(
+        *values: Type,
+        convert_strings_to_paths=True,
+        path_only=False,
+        convert_to_string: Literal[False] = False,
+        single: Literal[True] = True,
+    ) -> Path | str: ...
+
+    @overload
+    @staticmethod
+    def resolve(
+        *values: Type,
+        convert_strings_to_paths=True,
+        path_only=False,
+        convert_to_string: Literal[False] = False,
+        single: Literal[False] = False,
+    ) -> list[Path | str]: ...
+
+    @overload
+    @staticmethod
+    def resolve(
+        *values: Type,
+        convert_strings_to_paths=True,
+        path_only=False,
+        convert_to_string: Literal[True] = True,
+        single: Literal[True] = True,
+    ) -> str: ...
+
+    @overload
+    @staticmethod
+    def resolve(
+        *values: Type,
+        convert_strings_to_paths=True,
+        path_only=False,
+        convert_to_string: Literal[True] = True,
+        single: Literal[False] = False,
+    ) -> list[str]: ...
+
+    @staticmethod
+    def resolve(
+        *values: Type,
+        convert_strings_to_paths=True,
+        path_only=False,
+        convert_to_string=False,
+        single=True,
+    ) -> Path | str | list[str] | list[Path | str]:
+        result: list[Path | str] = []
+
+        if single:
+            assert len(values) == 1
+
+        for value in values:
+            if isinstance(value, FileTarget):
+                value = value.path
+
+            if isinstance(value, str) and convert_strings_to_paths:
+                value = Path(value)
+
+            if path_only and not isinstance(value, Path):
+                raise ValueError(f"Failed to resolve {value}")
+
+            if convert_to_string:
+                value = str(value)
+
+            if single:
+                return value
+
+            result.append(value)
+
+        return result
+
+
+OutputType = TypeVar("OutputType", FileTarget, list[FileTarget])
+
+
+class Rule[OutputType]:
+    @overload
+    def __new__(
+        cls,
+        command: str,
+        depfile: None | str = None,
+        deps: None | str = None,
+        description: None | str = None,
+        restat=False,
+        generator=False,
+        pool: None | str = None,
+        compile_command: None | str = None,
+        single_input=False,
+        single_output: Literal[True] = True,
+        variables: None | dict[str, RuleInput.Type] = None,
+    ) -> "Rule[FileTarget]": ...
+
+    @overload
+    def __new__(
+        cls,
+        command: str,
+        depfile: None | str = None,
+        deps: None | str = None,
+        description: None | str = None,
+        restat=False,
+        generator=False,
+        pool: None | str = None,
+        compile_command: None | str = None,
+        single_input=False,
+        single_output: Literal[False] = False,
+        variables: None | dict[str, RuleInput.Type] = None,
+    ) -> "Rule[list[FileTarget]]": ...
+
+    def __new__(
+        cls,
+        *args,
+        **kwargs,
+    ) -> "Rule[FileTarget] | Rule[list[FileTarget]]":
+        return super().__new__(
+            cls,
+        )
+
     def __init__(
         self,
         command: str,
@@ -18,7 +150,9 @@ class Rule:
         generator=False,
         pool: None | str = None,
         compile_command: None | str = None,
-        variables: None | dict[str, str] = None,
+        single_input=False,
+        single_output=True,
+        variables: None | dict[str, RuleInput.Type] = None,
     ):
         context = Context.current()
 
@@ -63,9 +197,15 @@ class Rule:
         self.variable_names = variable_names
         self.variables: dict[str, str] = {}
         self.has_compile_command = compile_command is not None
+        self.single_input = single_input
+        self.single_output = single_output
 
         for key, value in variables.items():
-            self[key].set(value)
+            self[key].set(
+                RuleInput.resolve(
+                    value, convert_strings_to_paths=False, convert_to_string=True
+                )
+            )
 
         assert context.writer is not None
         assert context.compdb_writer is not None
@@ -88,19 +228,34 @@ class Rule:
 
     def build(
         self,
-        *outputs: str,
-        inputs: None | list[str] = None,
-        implicit: None | list[str] = None,
-        order_only: None | list[str] = None,
-        implicit_outputs: None | list[str] = None,
+        *outputs: str | Path,
+        inputs: None | list[RuleInput.Type] = None,
+        implicit: None | list[RuleInput.Type] = None,
+        order_only: None | list[RuleInput.Type] = None,
+        implicit_outputs: None | list[str | Path] = None,
         pool: None | str = None,
         dyndep: None | str = None,
-        variables: None | dict[str, str] = None,
-    ):
+        variables: None | dict[str, RuleInput.Type] = None,
+    ) -> OutputType:
         if variables is None:
             variables = {}
 
-        with ScopeList([self[key].set(value) for key, value in variables.items()]):
+        if self.single_output and len(outputs) != 1:
+            raise ValueError("Expected a single output!")
+
+        if self.single_input and (inputs is None or len(inputs) != 1):
+            raise ValueError("Expected a single input!")
+
+        with ScopeList(
+            [
+                self[key].set(
+                    RuleInput.resolve(
+                        value, convert_strings_to_paths=False, convert_to_string=True
+                    )
+                )
+                for key, value in variables.items()
+            ]
+        ):
             for variable in self.variable_names:
                 if (
                     variable not in NINJA_PROVIDED_VARIABLES
@@ -110,27 +265,61 @@ class Rule:
 
             context = Context.current()
 
-            resolved_outputs = [str(context.builddir / output) for output in outputs]
+            resolved_outputs = [context.builddir / output for output in outputs]
 
             resolved_variables = {
                 key: ninja_escape(value) for key, value in self.variables.items()
             }
 
+            resolved_inputs = (
+                RuleInput.resolve(
+                    *inputs,
+                    convert_strings_to_paths=False,
+                    convert_to_string=True,
+                    single=False,
+                )
+                if inputs is not None
+                else None
+            )
+
             assert context.writer is not None
             assert context.compdb_writer is not None
             context.writer.build(
-                outputs=resolved_outputs,
+                outputs=[str(output) for output in resolved_outputs],
                 rule=self.name,
-                inputs=inputs,
-                implicit=implicit,
-                order_only=order_only,
+                inputs=resolved_inputs,
+                implicit=RuleInput.resolve(
+                    *implicit,
+                    convert_strings_to_paths=False,
+                    convert_to_string=True,
+                    single=False,
+                )
+                if implicit is not None
+                else None,
+                order_only=RuleInput.resolve(
+                    *order_only,
+                    convert_strings_to_paths=False,
+                    convert_to_string=True,
+                    single=False,
+                )
+                if order_only is not None
+                else None,
                 variables=resolved_variables,
-                implicit_outputs=implicit_outputs,
+                implicit_outputs=list(map(str, implicit_outputs))
+                if implicit_outputs is not None
+                else None,
                 pool=pool,
                 dyndep=dyndep,
             )
 
             if self.has_compile_command:
                 context.compdb_writer.build(
-                    outputs=resolved_outputs, rule=self.name, inputs=inputs
+                    outputs=[str(output) for output in resolved_outputs],
+                    rule=self.name,
+                    inputs=resolved_inputs,
                 )
+
+            if self.single_output:
+                return FileTarget(resolved_outputs[0])  # ty:ignore[invalid-return-type]
+            else:
+                return [FileTarget(output) for output in resolved_outputs]  # ty:ignore[invalid-return-type]

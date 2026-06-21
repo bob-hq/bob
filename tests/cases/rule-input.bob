@@ -1,0 +1,9 @@
+from pathlib import Path
+
+from bob.prelude import *
+
+hi = Rule("echo hi > $out", single_output=True).build("hi")
+
+copy = Rule("cp $in $out")
+copy.build("bye", inputs=[hi])
+copy.build(Path("byebye"), inputs=[hi])
