@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 from bob.api.scope import DictionaryScope, Scope, ScopeList
 
 if TYPE_CHECKING:
-    from bob.api.rule import Rule
+    from bob.api.rule import Rule, RuleInput
+    from bob.api.scoped_value import ScopedRule
 
 NINJA_PROVIDED_VARIABLES = {"in", "out"}
 NINJA_SPECIAL_VARIABLES = {
@@ -23,7 +24,7 @@ NINJA_SPECIAL_VARIABLES = {
 
 
 class Variable:
-    def __init__(self, name: str, *rules: "Rule") -> None:
+    def __init__(self, name: str, *rules: "Rule | ScopedRule") -> None:
         if name in NINJA_SPECIAL_VARIABLES:
             raise ValueError(f'"{name}" is a special Ninja variable')
 
@@ -34,7 +35,7 @@ class Variable:
         self.rules = rules
         self.name = name
 
-    def get(self) -> str:
+    def get(self) -> "RuleInput.Type":
         return self.rules[0].variables[self.name]
 
     def set(self, value: str) -> Scope:
@@ -42,8 +43,9 @@ class Variable:
             [DictionaryScope(rule.variables, {self.name: value}) for rule in self.rules]
         )
 
-    def add(self, value: str) -> Scope:
-        value = self.get() + value
+    def add(self, value: "RuleInput.Type") -> Scope:
+        # TODO
+        value = self.get() + value  # ty:ignore[unsupported-operator]
 
         return ScopeList(
             [DictionaryScope(rule.variables, {self.name: value}) for rule in self.rules]

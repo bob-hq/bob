@@ -56,3 +56,32 @@ class DictionaryScope(Scope):
         self.original = {}
         self.changes = {}
         self.variables = {}
+
+
+class AttributeScope(Scope):
+    def __init__(self, object: Any, changes: dict[str, Any]) -> None:
+        self.object = object
+        self.changes = changes
+
+        original: dict[str, Any] = {}
+        for key, value in changes.items():
+            if hasattr(object, key):
+                original[key] = getattr(object, key)
+
+            setattr(object, key, value)
+
+        self.original = original
+
+    def close(self) -> None:
+        for key in self.changes:
+            # The `object` mustn't have changed underneath our feet, we have no sensible action in that case.
+            assert getattr(self.object, key) == self.changes[key]
+
+            if key in self.original:
+                setattr(self.object, key, self.original[key])
+            else:
+                delattr(self.object, key)
+
+        self.original = {}
+        self.changes = {}
+        self.object = None

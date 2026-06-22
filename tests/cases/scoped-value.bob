@@ -1,0 +1,16 @@
+from bob.prelude import *
+
+magic = ScopedValue("hi")
+assert magic.get() == "hi"
+
+with magic.set("hola"):
+    assert magic.get() == "hola"
+
+rule = Rule("echo $magic > $out")
+scoped_rule = ScopedRule(rule)
+scoped_rule["magic"].set("hi")
+
+scoped_rule.build("hi")
+
+with scoped_rule.set(Rule("echo $magic $magic > $out")):
+    scoped_rule.build("hi hi")
