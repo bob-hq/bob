@@ -24,7 +24,7 @@
 ## Getting Started
 
 ```bash
-uv tool install --from git+https://github.com/bob-hq/bob
+uv tool install git+https://github.com/bob-hq/bob --with git+https://github.com/bob-hq/bob-std 
 ```
 
 ## CLI
