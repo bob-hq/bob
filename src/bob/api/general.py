@@ -1,4 +1,5 @@
 import logging
+from importlib.metadata import version as importlib_version
 from typing import Literal, overload
 
 from bob.core.context import Context
@@ -30,3 +31,19 @@ def config(name: str, required: bool = False, default: None | str = None) -> Non
         return default
 
     return context.configs[name]
+
+
+def bob_required_version(version: str, bob_version: None | str = None) -> None:
+    if bob_version is None:
+        bob_version = importlib_version("bob")
+
+    if "." not in version:
+        raise ValueError(
+            f"Invalid required version {version} doesn't contain minor requirement!"
+        )
+
+    major, minor, *_ = map(int, version.split("."))
+    bob_major, bob_minor, *_ = map(int, bob_version.split("."))
+
+    if major != bob_major or bob_minor < minor or (major == 0 and bob_minor != minor):
+        raise Exception(f"Invalid bob version: need {version} but have {bob_version}")
