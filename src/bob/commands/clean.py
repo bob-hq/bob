@@ -5,7 +5,7 @@ from pathlib import Path
 from bob.constants import BOB_BUILDDIR_SUBDIRECTORY, COMPDB_PATH
 
 
-def clean(builddir: Path, force=False) -> None:
+def clean(builddir: Path, force: bool = False) -> None:
     if not builddir.exists():
         return
 

@@ -19,9 +19,9 @@ class ScopedValue[T]:
     def get(self, required: Literal[False] = False, default: T = ...) -> T: ...
 
     @overload
-    def get(self, required: Literal[True] = True, default: None | str = None) -> T: ...
+    def get(self, required: Literal[True] = True, default: None | T = None) -> T: ...
 
-    def get(self, required=True, default: None | T = None):
+    def get(self, required: bool = True, default: None | T = None) -> None | T:
         if self.value is None:
             if required:
                 raise ValueError("Required non-present value!")
@@ -34,7 +34,7 @@ class ScopedValue[T]:
         return AttributeScope(self, {"value": value})
 
     def add(self, value: T) -> Scope:
-        return self.set(self.get() + value)  # ty:ignore[unsupported-operator]
+        return self.set(self.get() + value)  # type: ignore[operator] # ty: ignore[unsupported-operator]
 
 
 class ScopedRule[OutputType](ScopedValue[Rule[OutputType]]):
@@ -68,7 +68,7 @@ class ScopedRule[OutputType](ScopedValue[Rule[OutputType]]):
         pool: None | str = None,
         dyndep: None | str = None,
         variables: None | dict[str, RuleInput.Multiple] = None,
-    ):
+    ) -> OutputType:
         assert self.value is not None
 
         if variables is None:

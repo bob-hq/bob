@@ -4,12 +4,12 @@ from typing import Generator
 import pytest
 
 from bob.api.path import glob
-from bob.api.rule import Rule
+from bob.api.rule import FileTarget, Rule
 from bob.core.context import Context
 
 
 @pytest.fixture()
-def context(unique_tmp_path, builddir: Path) -> Generator[Context, None, None]:
+def context(unique_tmp_path: Path, builddir: Path) -> Generator[Context, None, None]:
     with Context(builddir, {}) as context:
         yield context
 
@@ -20,13 +20,13 @@ def test_rule_unused_variable_in_constructor(context: Context) -> None:
 
 
 def test_rule_unused_variable_in_build(context: Context) -> None:
-    rule = Rule("echo hi > $out")
+    rule: Rule[FileTarget] = Rule("echo hi > $out")
     with pytest.raises(KeyError, match="dummy"):
         rule.build("hi", variables={"dummy": "hi"})
 
 
 def test_rule_uninitialized_variable(context: Context) -> None:
-    rule = Rule("echo $something > $out")
+    rule: Rule[FileTarget] = Rule("echo $something > $out")
     with pytest.raises(ValueError, match='Variable "something" is uninitialized'):
         rule.build("hi")
 

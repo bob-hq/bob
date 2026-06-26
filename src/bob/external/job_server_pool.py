@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # Copied from https://raw.githubusercontent.com/ninja-build/ninja/refs/heads/master/misc/jobserver_pool.py
+# type: ignore
+# ruff: noqa
+
 # Copyright 2024 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,7 +84,7 @@ if _IS_WINDOWS:
         # can be None to indicate default security attributes, but mypy only wants
         # a PySECURITY_ATTRIBUTES for some reason.
         handle = win32event.CreateSemaphore(
-            None,  # type: ignore
+            None,
             jobs_count - 1,
             jobs_count - 1,
             sem_name,
@@ -165,7 +168,7 @@ else:  # !_IS_WINDOWS
             os.remove(path)
 
         # mypy complains that this does not exit on Windows.
-        os.mkfifo(path)  # type: ignore
+        os.mkfifo(path)
 
         read_fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
         write_fd = os.open(path, os.O_WRONLY | os.O_NONBLOCK)

@@ -11,9 +11,9 @@ def compdb(
     bobfile: Path,
     dont_symlink: bool,
     configs: Sequence[str] = (),
-    use_current_configs=False,
-    wait=True,
-) -> subprocess.Popen:
+    use_current_configs: bool = False,
+    wait: bool = True,
+) -> subprocess.Popen[bytes]:
     build_compdb_path = builddir / COMPDB_PATH
 
     configure(builddir, bobfile, configs, use_current_configs, lazy=True)

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bob.api.scope import DictionaryScope, Scope, ScopeList
 
@@ -24,7 +24,7 @@ NINJA_SPECIAL_VARIABLES = {
 
 
 class Variable:
-    def __init__(self, name: str, *rules: "Rule | ScopedRule") -> None:
+    def __init__(self, name: str, *rules: "Rule[Any] | ScopedRule[Any]") -> None:
         if name in NINJA_SPECIAL_VARIABLES:
             raise ValueError(f'"{name}" is a special Ninja variable')
 
@@ -44,7 +44,7 @@ class Variable:
         )
 
     def add(self, value: "RuleInput.Multiple") -> Scope:
-        value = self.get() + value  # ty:ignore[unsupported-operator]
+        value = self.get() + value  # type: ignore[operator] # ty: ignore[unsupported-operator]
 
         return ScopeList(
             [DictionaryScope(rule.variables, {self.name: value}) for rule in self.rules]

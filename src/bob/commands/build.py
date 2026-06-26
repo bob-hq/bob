@@ -1,6 +1,6 @@
 import os
 import subprocess
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Sequence
 
@@ -25,19 +25,19 @@ def run_ninja(builddir: Path, targets: Sequence[str] = ()) -> None:
 def build(
     builddir: Path,
     bobfile: Path,
-    do_clean=False,
-    no_compdb=False,
-    symlink_compdb=False,
+    do_clean: bool = False,
+    no_compdb: bool = False,
+    symlink_compdb: bool = False,
     configs: Sequence[str] = (),
-    use_current_configs=False,
+    use_current_configs: bool = False,
     targets: Sequence[str] = (),
     jobs: None | int = None,
-    no_jobserver=False,
+    no_jobserver: bool = False,
 ) -> None:
     if jobs is None:
         jobs = os.cpu_count()
 
-    context = nullcontext()
+    context: AbstractContextManager[None] = nullcontext()
 
     if not no_jobserver:
         assert jobs is not None
@@ -49,7 +49,7 @@ def build(
 
         configure(builddir, bobfile, configs, use_current_configs, lazy=True)
 
-        p: subprocess.Popen | None
+        p: subprocess.Popen[bytes] | None = None
         if not no_compdb:
             p = compdb(
                 builddir,

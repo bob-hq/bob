@@ -1,5 +1,6 @@
 import abc
-from typing import Any, Self
+from types import TracebackType
+from typing import Any, Self, Type
 
 
 class Scope(abc.ABC):
@@ -9,7 +10,12 @@ class Scope(abc.ABC):
     def __enter__(self) -> "Scope":
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(
+        self,
+        exc_type: None | Type[BaseException],
+        exc: None | BaseException,
+        tb: None | TracebackType,
+    ) -> None:
         self.close()
 
     def __or__(self, other: Self | "ScopeList") -> "Scope":

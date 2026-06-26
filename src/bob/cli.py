@@ -1,6 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
+from typing import Sequence
 
 import rich_click as click
 
@@ -12,7 +13,9 @@ from bob.constants import (
 )
 
 
-def complete_targets(ctx: click.Context, param: click.Parameter, incomplete: str):
+def complete_targets(
+    ctx: click.Context, param: click.Parameter, incomplete: str
+) -> list[str]:
     builddir: Path = ctx.params.get("builddir", DEFAULT_BUILDDIR)
 
     p = subprocess.run(
@@ -38,7 +41,9 @@ def complete_targets(ctx: click.Context, param: click.Parameter, incomplete: str
     ]
 
 
-def complete_configs(ctx: click.Context, param: click.Parameter, incomplete: str):
+def complete_configs(
+    ctx: click.Context, param: click.Parameter, incomplete: str
+) -> list[str]:
     builddir: Path = ctx.params.get("builddir", DEFAULT_BUILDDIR)
 
     used_configs_path = get_used_configs_path(builddir)
@@ -92,12 +97,22 @@ def cli() -> None:
     is_flag=True,
     help="Use the current configs saved from previously configuring.",
 )
-def configure(**kwargs) -> None:
+def configure(
+    builddir: Path,
+    bobfile: Path,
+    configs: Sequence[str],
+    use_current_configs: bool,
+) -> None:
     """Generate the Ninja file to build the project."""
 
     from bob.commands.configure import configure
 
-    configure(**kwargs)
+    configure(
+        builddir=builddir,
+        bobfile=bobfile,
+        configs=configs,
+        use_current_configs=use_current_configs,
+    )
 
 
 @cli.command()
@@ -156,12 +171,34 @@ def configure(**kwargs) -> None:
     help="Don't provide a jobserver.",
 )
 @click.argument("targets", shell_complete=complete_targets, nargs=-1)
-def build(**kwargs) -> None:
+def build(
+    builddir: Path,
+    bobfile: Path,
+    do_clean: bool,
+    no_compdb: bool,
+    symlink_compdb: bool,
+    configs: Sequence[str],
+    use_current_configs: bool,
+    targets: Sequence[str],
+    jobs: None | int,
+    no_jobserver: bool,
+) -> None:
     """Build the given Bob project."""
 
     from bob.commands.build import build
 
-    build(**kwargs)
+    build(
+        builddir=builddir,
+        bobfile=bobfile,
+        do_clean=do_clean,
+        no_compdb=no_compdb,
+        symlink_compdb=symlink_compdb,
+        configs=configs,
+        use_current_configs=use_current_configs,
+        targets=targets,
+        jobs=jobs,
+        no_jobserver=no_jobserver,
+    )
 
 
 @cli.command
@@ -178,12 +215,12 @@ def build(**kwargs) -> None:
     help="Remove the build directory even if it doesn't match a Bob build directory.",
     is_flag=True,
 )
-def clean(**kwargs):
+def clean(builddir: Path, force: bool) -> None:
     """Clean all built files."""
 
     from bob.commands.clean import clean
 
-    clean(**kwargs)
+    clean(builddir=builddir, force=force)
 
 
 @cli.command
@@ -222,12 +259,26 @@ def clean(**kwargs):
     is_flag=True,
     help="Use the current configs saved from previously configuring.",
 )
-def compdb(**kwargs):
+def compdb(
+    builddir: Path,
+    bobfile: Path,
+    dont_symlink: bool,
+    configs: Sequence[str],
+    use_current_configs: bool,
+    wait: bool,
+) -> None:
     """Create a compilation database for the project."""
 
     from bob.commands.compdb import compdb
 
-    compdb(**kwargs)
+    compdb(
+        builddir=builddir,
+        bobfile=bobfile,
+        dont_symlink=dont_symlink,
+        configs=configs,
+        use_current_configs=use_current_configs,
+        wait=wait,
+    )
 
 
 @cli.command
@@ -237,9 +288,9 @@ def compdb(**kwargs):
     default=Path(os.environ["SHELL"]).name if "SHELL" in os.environ else None,
     show_default=True,
 )
-def completions(**kwargs) -> None:
+def completions(shell: str) -> None:
     """Install shell completions for Bob."""
 
     from bob.commands.completions import completions
 
-    completions(**kwargs)
+    completions(shell=shell)

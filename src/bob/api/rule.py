@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from string import Template
-from typing import Literal, TypeAlias, TypeVar, overload
+from typing import Any, Literal, TypeAlias, TypeVar, overload
 
 from ninja.ninja_syntax import escape as ninja_escape
 
@@ -28,14 +28,14 @@ class RuleInput:
     Type: TypeAlias = str | Path | FileTarget | PhonyTarget
     Multiple: TypeAlias = Type | list[Type]
 
-    def __init__(self):
+    def __init__(self) -> None:
         raise Exception("RuleInput is a utility namespace")
 
     @overload
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
+        convert_strings_to_paths: bool = True,
         path_only: Literal[False] = False,
         convert_to_string: Literal[False] = False,
         single: Literal[True] = True,
@@ -45,7 +45,7 @@ class RuleInput:
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
+        convert_strings_to_paths: bool = True,
         path_only: Literal[False] = False,
         convert_to_string: Literal[False] = False,
         single: Literal[False] = False,
@@ -55,7 +55,7 @@ class RuleInput:
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
+        convert_strings_to_paths: bool = True,
         path_only: Literal[True] = True,
         convert_to_string: Literal[False] = False,
         single: Literal[True] = True,
@@ -65,7 +65,7 @@ class RuleInput:
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
+        convert_strings_to_paths: bool = True,
         path_only: Literal[True] = True,
         convert_to_string: Literal[False] = False,
         single: Literal[False] = False,
@@ -75,7 +75,7 @@ class RuleInput:
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
+        convert_strings_to_paths: bool = True,
         path_only: Literal[False] = False,
         convert_to_string: Literal[True] = True,
         single: Literal[True] = True,
@@ -85,7 +85,7 @@ class RuleInput:
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
+        convert_strings_to_paths: bool = True,
         path_only: Literal[False] = False,
         convert_to_string: Literal[True] = True,
         single: Literal[False] = False,
@@ -94,10 +94,10 @@ class RuleInput:
     @staticmethod
     def resolve(
         *values: Type,
-        convert_strings_to_paths=True,
-        path_only=False,
-        convert_to_string=False,
-        single=True,
+        convert_strings_to_paths: bool = True,
+        path_only: bool = False,
+        convert_to_string: bool = False,
+        single: bool = True,
     ) -> Path | str | list[str] | list[Path] | list[Path | str]:
         result: list[Path | str] = []
 
@@ -139,12 +139,12 @@ class Rule[OutputType]:
         depfile: None | str = None,
         deps: None | str = None,
         description: None | str = None,
-        restat=False,
-        generator=False,
+        restat: bool = False,
+        generator: bool = False,
         pool: None | str = None,
-        always=False,
+        always: bool = False,
         compile_command: None | str = None,
-        single_input=False,
+        single_input: bool = False,
         single_output: Literal[True] = True,
         variables: None | dict[str, RuleInput.Type] = None,
     ) -> "Rule[FileTarget]": ...
@@ -156,21 +156,21 @@ class Rule[OutputType]:
         depfile: None | str = None,
         deps: None | str = None,
         description: None | str = None,
-        restat=False,
-        generator=False,
+        restat: bool = False,
+        generator: bool = False,
         pool: None | str = None,
-        always=False,
+        always: bool = False,
         compile_command: None | str = None,
-        single_input=False,
+        single_input: bool = False,
         single_output: Literal[False] = False,
         variables: None | dict[str, RuleInput.Type] = None,
     ) -> "Rule[list[FileTarget]]": ...
 
     def __new__(
         cls,
-        *args,
-        **kwargs,
-    ) -> "Rule[FileTarget] | Rule[list[FileTarget]]":
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
         return super().__new__(
             cls,
         )
@@ -181,13 +181,13 @@ class Rule[OutputType]:
         depfile: None | str = None,
         deps: None | str = None,
         description: None | str = None,
-        restat=False,
-        generator=False,
+        restat: bool = False,
+        generator: bool = False,
         pool: None | str = None,
-        always=False,
+        always: bool = False,
         compile_command: None | str = None,
-        single_input=False,
-        single_output=True,
+        single_input: bool = False,
+        single_output: bool = True,
         variables: None | dict[str, RuleInput.Type] = None,
     ):
         context = Context.current()
@@ -373,9 +373,9 @@ class Rule[OutputType]:
                 )
 
             if self.single_output:
-                return FileTarget(resolved_outputs[0])  # ty:ignore[invalid-return-type]
+                return FileTarget(resolved_outputs[0])  # type: ignore[return-value] # ty: ignore[invalid-return-type]
             else:
-                return [FileTarget(output) for output in resolved_outputs]  # ty:ignore[invalid-return-type]
+                return [FileTarget(output) for output in resolved_outputs]  # type: ignore[return-value] # ty: ignore[invalid-return-type]
 
 
 def phony(name: str, inputs: None | list[RuleInput.Type] = None) -> PhonyTarget:
@@ -399,7 +399,7 @@ def phony(name: str, inputs: None | list[RuleInput.Type] = None) -> PhonyTarget:
 
 
 def shell_output_rule(
-    command: str, pool: None | str = None, single_input=False
+    command: str, pool: None | str = None, single_input: bool = False
 ) -> Rule[FileTarget]:
     return Rule(
         command=f"(({command}) > $out.new && cmp -s $out $out.new || mv $out.new $out); rm -f $out.new",
@@ -412,14 +412,14 @@ def shell_output_rule(
 
 
 @overload
-def shell(command: str, text: Literal[True] = True, check=True) -> str: ...
+def shell(command: str, text: Literal[True] = True, check: bool = True) -> str: ...
 
 
 @overload
-def shell(command: str, text: Literal[False] = False, check=True) -> bytes: ...
+def shell(command: str, text: Literal[False] = False, check: bool = True) -> bytes: ...
 
 
-def shell(command: str, text=True, check=True) -> str | bytes:
+def shell(command: str, text: bool = True, check: bool = True) -> str | bytes:
     context = Context.current()
 
     shell_index = context.variables.get("shell_index", 1)
@@ -445,6 +445,6 @@ def shell(command: str, text=True, check=True) -> str | bytes:
     output_file.write_bytes(output)
 
     if text:
-        output = output.decode()
+        return output.decode()
 
     return output

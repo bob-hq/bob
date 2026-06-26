@@ -1,7 +1,8 @@
 import runpy
 import sys
 from pathlib import Path
-from typing import Any, Self
+from types import TracebackType
+from typing import Any, ClassVar, Self, Type
 
 from ninja import Writer
 
@@ -15,7 +16,7 @@ from bob.constants import (
 
 
 class Context:
-    _CURRENT: None | Self = None
+    _CURRENT: ClassVar[None | Self] = None
 
     def __init__(self, builddir: Path, configs: dict[str, str]):
         from bob.api.rule import PhonyTarget
@@ -36,11 +37,11 @@ class Context:
         (self.builddir / BOB_BUILDDIR_SUBDIRECTORY).mkdir(parents=True, exist_ok=True)
 
         self.writer = Writer(
-            open(get_build_ninja_path(self.builddir), "w"),  # ty: ignore[invalid-argument-type]
+            open(get_build_ninja_path(self.builddir), "w"),  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
             width=999999,
         )
         self.compdb_writer = Writer(
-            open(get_compdb_ninja_path(self.builddir), "w"),  # ty: ignore[invalid-argument-type]
+            open(get_compdb_ninja_path(self.builddir), "w"),  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
             width=999999,
         )
 
@@ -57,7 +58,12 @@ class Context:
 
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(
+        self,
+        exc_type: None | Type[BaseException],
+        exc: None | BaseException,
+        tb: None | TracebackType,
+    ) -> None:
         failed = exc is not None
         from bob.api.rule import Rule
 

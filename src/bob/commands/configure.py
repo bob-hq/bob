@@ -10,17 +10,17 @@ def configure(
     builddir: Path,
     bobfile: Path,
     configs: Sequence[str] = (),
-    use_current_configs=False,
-    lazy=False,
+    use_current_configs: bool = False,
+    lazy: bool = False,
 ) -> None:
     configs_path = get_configs_path(builddir)
 
+    resolved_configs: dict[str, str] = {}
     if use_current_configs:
         assert len(configs) == 0, "Can't provide configs and use current configs!"
         with open(configs_path, "r") as f:
-            resolved_configs: dict[str, str] = json.load(f)
+            resolved_configs = json.load(f)
     else:
-        resolved_configs: dict[str, str] = {}
         for config in configs:
             key, _, value = config.partition("=")
             resolved_configs[key] = value

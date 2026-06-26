@@ -1,10 +1,17 @@
 from pathlib import Path
+from typing import Literal, overload
 
 from bob.api.rule import RuleInput
 from bob.core.context import Context
 
 
-def read(path: RuleInput.Type, text=False):
+@overload
+def read(path: RuleInput.Type, text: Literal[True] = True) -> str: ...
+@overload
+def read(path: RuleInput.Type, text: Literal[False] = False) -> bytes: ...
+
+
+def read(path: RuleInput.Type, text: bool = False) -> str | bytes:
     path = RuleInput.resolve(path, path_only=True)
 
     context = Context.current()
