@@ -1,3 +1,4 @@
+import os
 import shlex
 import subprocess
 import sys
@@ -140,6 +141,31 @@ class RuleInput:
             result.append(value)
 
         return result
+
+    @staticmethod
+    def id(
+        value: Type,
+        sep: str = os.path.sep,
+    ) -> str:
+        context = Context.current()
+
+        if isinstance(value, str):
+            value = Path(value)
+
+        if isinstance(value, Path):
+            value = context.current_src_subdir / value
+
+        if isinstance(value, Path):
+            return sep.join(
+                ("src", str(value))
+                if not value.is_absolute()
+                else ("abssrc", str(value).removeprefix("/"))
+            )
+        elif isinstance(value, FileTarget):
+            value = value.path
+            return sep.join(("built", str(value.relative_to(context.builddir))))
+        else:
+            return sep.join(("phony", value.name))
 
 
 OutputType = TypeVar("OutputType", FileTarget, list[FileTarget])
